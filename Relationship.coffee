@@ -32,7 +32,7 @@ module.exports = class Relationship extends BaseNode
       if not err = handleError err, resp
         type = Node.types[node.properties.type]
         if type?
-          node = new type node.data
+          node = new type @db, node.data
         @end = node
       cb err
   
