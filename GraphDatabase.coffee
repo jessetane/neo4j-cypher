@@ -41,7 +41,7 @@ module.exports = class GraphDatabase
       if results.length == 1 then results = results[0]
       cb handleError(err, resp), results
   
-  ### i hate SQL, why the fuck should i need this?
+  ### i hate SQL, do we really need this?
   cypher: (query, params, cb) ->
     query = { query: query }
     if params then query.params = params
