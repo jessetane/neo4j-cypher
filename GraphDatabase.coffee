@@ -38,6 +38,7 @@ module.exports = class GraphDatabase
         type = baseType[result.data.type]
         if not type? then type = baseType
         new type @db, result
+      if results.length == 1 then results = results[0]
       cb handleError(err, resp), results
   
   ### i hate SQL, why the fuck should i need this?

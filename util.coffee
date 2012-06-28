@@ -2,7 +2,6 @@
 #
 #
 
-
 #
 capitalize = (str) ->
   str.charAt(0).toUpperCase() + str.slice 1
@@ -36,6 +35,8 @@ module.exports.handleError = (error, response) ->
       error = new Error message
       error.message = message
 
-  # make sure we have some kind of message
-  error.message ?= error.toString()
+  else if error
+    # make sure we have some kind of message
+    error.message ?= error.toString()
+    
   return error

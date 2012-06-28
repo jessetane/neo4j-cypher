@@ -42,7 +42,7 @@ module.exports = class BaseNode
       opts = url: "#{@db.services[type]}/#{index}/#{key}/#{val}"
     request.get opts, (err, resp, data) =>
       if not err = handleError err, resp
-        @deserialize data
+        @deserialize JSON.parse data
       cb err
   
   #

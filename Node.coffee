@@ -4,12 +4,11 @@
 
 
 _ = require "underscore"
+async = require "async"
+request = require "request"
 util = require "./util"
 handleError = util.handleError
-request = require "request"
 BaseNode = require "./BaseNode"
-Relationship = require "./Relationship"
-async = require "async"
 
 
 module.exports = class Node extends BaseNode
@@ -22,6 +21,7 @@ module.exports = class Node extends BaseNode
   
   #
   fetchRelationships: (types, direction, fetchEndNodes, cb) =>
+    Relationship = require "./Relationship"
     url = "#{@self}/relationships/"
     if direction
       url += direction
@@ -39,9 +39,8 @@ module.exports = class Node extends BaseNode
         @relationships ?= {}
         rels = []
         data.forEach (relationship) =>
-          type = Relationship.types[relationship.data.type]
-          if not type?
-            type = Relationship
+          type = Relationship.types[relationship.type]
+          if not type? then type = Relationship
           rel = new type @db, relationship
           rel.start = @
           rels.push rel
@@ -77,7 +76,6 @@ module.exports = class Node extends BaseNode
       url = @self + "/properties"
       method = "put"
     else
-      if @constructor.type == "relationship"
       url = "#{@db.services.node}"
       method = "post"
     opts = url: url, json: @serialize()
