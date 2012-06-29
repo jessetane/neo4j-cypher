@@ -12,8 +12,27 @@ BaseNode = require "./BaseNode"
 
 
 module.exports = class Node extends BaseNode
-  @type: "node"
   @types: {}
+  
+  #
+  createAndIndex: (index, key, cb) =>
+    console.log "create"
+    
+  #
+  createAndIndexUnique: (index, key, cb) =>
+    index = index or @constructor.index
+    key = key or @constructor.indexKey
+    @properties._type_ = @constructor.name
+    opts = 
+      url: "#{@db.services.node_index}/#{index}?unique"
+      json: 
+        key: key
+        value: @properties[key]
+        properties: @properties
+    request.post opts, (err, resp, data) =>
+      if not err = handleError err, resp
+        @deserialize data
+      cb err
   
   #
   fetchAllRelationships: (fetchEndNodes, cb) =>
@@ -39,32 +58,41 @@ module.exports = class Node extends BaseNode
         @relationships ?= {}
         rels = []
         data.forEach (relationship) =>
-          type = Relationship.types[relationship.type]
-          if not type? then type = Relationship
-          rel = new type @db, relationship
+          klass = Relationship.types[relationship.type] or Relationship
+          rel = new klass @db, relationship
           rel.start = @
           rels.push rel
           @relationships[relationship.type] ?= []
           @relationships[relationship.type].push rel
-        if fetchEndNodes
+        if fetchEndNodes  
+          if not _.isBoolean fetchEndNodes
+            endNodeTypes = fetchEndNodes
+            if not _.isArray endNodeTypes
+              endNodeTypes = [ endNodeTypes ]
           ops = []
-          rels.forEach (rel) => ops.push (cb) => rel.fetchEndNode cb
+          rels.forEach (rel) => 
+            if not endNodeTypes? or rel.data.type in endNodeTypes
+              ops.push (cb) => rel.fetchEndNode cb
           async.parallel ops, cb
         else
           cb()
   
   #
-  createRelationship: (node, type, properties, cb) =>
-    if not @self
-      return cb handleError "Node must exist to create relationships"
-    data.to = @self
+  createRelationship: (type, node, properties, cb) =>
+    if not @self or not node.self
+      return cb handleError "Nodes must exist to create relationships"
+    data = {}
+    data.to = node.self
     data.type = type
     data.data = properties
     opts = url: @self + "/relationships", json: data
     request.post opts, (err, resp, data) =>
       if not err = handleError err, resp
-        rel = new Relationship @db, JSON.parse data
+        Relationship = require "./Relationship"
+        klass = Relationship.types[type] or Relationship
+        rel = new klass @db, data
         rel.start = @
+        rel.end = node
         @relationships ?= {}
         @relationships[type] ?= []
         @relationships[type].push rel
@@ -78,6 +106,48 @@ module.exports = class Node extends BaseNode
     else
       url = "#{@db.services.node}"
       method = "post"
-    opts = url: url, json: @serialize()
+      @properties._type_ = @constructor.name
+    opts = url: url, json: @properties
     request[method] opts, (err, resp, data) =>
-      cb hanleError err, resp
+      if not err = handleError err, resp
+        @deserialize data
+      cb err
+
+  #
+  delete: (relationshipsToDeleteEndNodesFor, jobs, cb) =>
+    if not jobs
+      master = true
+      jobs = []
+    
+    jobs.push
+      to: @self.split(@db.url)[1]
+      method: "DELETE"
+    
+    @fetchRelationships null, null, relationshipsToDeleteEndNodesFor, (err) =>
+      ops = []
+      _.each @relationships, (relType) =>
+        relType.forEach (rel) =>
+          ops.push (cb) => rel.delete jobs, cb
+      async.parallel ops, (err) =>
+        if master
+          super jobs, cb
+        else
+          cb null, jobs
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

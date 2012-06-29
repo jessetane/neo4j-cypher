@@ -11,9 +11,9 @@ GraphDatabase = require "./GraphDatabase"
 
 
 module.exports = class BaseNode
-  @type = null # subclasses must implement
   
   # getter
+  @::__defineGetter__ "nodetype", -> if @ instanceof require "./Node" then "node" else "relationship"
   @::__defineGetter__ "self", -> @data?.self
   
   #
@@ -24,7 +24,7 @@ module.exports = class BaseNode
   #
   deserialize: (data={}) =>
     @data = data
-    @properties = data.data
+    @properties = data.data or data
   
   #
   serialize: =>
@@ -38,7 +38,7 @@ module.exports = class BaseNode
       index = encodeURIComponent @constructor.index
       key = encodeURIComponent @constructor.indexKey
       val = encodeURIComponent @properties[@constructor.indexKey]
-      type = @constructor.type + "_index"
+      type = @nodetype + "_index"
       opts = url: "#{@db.services[type]}/#{index}/#{key}/#{val}"
     request.get opts, (err, resp, data) =>
       if not err = handleError err, resp
@@ -46,22 +46,19 @@ module.exports = class BaseNode
       cb err
   
   #
-  delete: (force=false, cb) =>
-    opts = url: @self
-    request.del opts, (err, resp, data) =>
-      cb handleError err, resp
+  delete: (jobs, cb) =>
+    @db.transact jobs, cb
   
   #
   index: (index, key, cb) =>
-    if not dbobj.self?
+    if not @self?
       cb handleError type + " must exist in order to index"
     else
-      type = @constructor.type + "_index"
+      type = @nodetype + "_index"
       url: "#{@db.services[type]}/#{index}"
       json:
         uri: url
         key: key
-        value: dbobj[key]
-      response = request.post opts, (err, resp, data) =>
+        value: @properties[key]
+      response = request.post opts, (err, resp) =>
         cb handleError err, resp
-        

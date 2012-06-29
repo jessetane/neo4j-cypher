@@ -2,6 +2,8 @@
 #
 #
 
+_ = require "underscore"
+
 #
 capitalize = (str) ->
   str.charAt(0).toUpperCase() + str.slice 1
@@ -13,7 +15,12 @@ module.exports.handleError = (error, response) ->
   if not error and response?.statusCode >= 400
     error = new Error response.statusCode
     error.message = response.statusCode
-  
+    try
+      error.message = JSON.parse(response.body.message).exception
+    catch err
+      try
+        error.message = response.body.exception
+    
   # other types, let 
   else if error and not error instanceof Error
     
