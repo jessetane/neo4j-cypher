@@ -38,5 +38,4 @@ module.exports.handleError = (error, response) ->
       error = new Error capitalize error.toString()
   
   error?.message ?= response.body
-  error?.details = response.body
   return error
