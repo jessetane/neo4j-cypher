@@ -115,12 +115,12 @@ module.exports = class Node extends BaseNode
       cb err
   
   #
-  delete: (jobs, relationshipsToDeleteEndNodesFor, cb) =>
-    if not jobs
+  delete: (batch, relationshipsToDeleteEndNodesFor, cb) =>
+    if not batch
       master = true
-      jobs = []
+      batch = []
     
-    jobs.push
+    batch.push
       to: @self.split(@db.url)[1]
       method: "DELETE"
     
@@ -129,7 +129,7 @@ module.exports = class Node extends BaseNode
       ops = []
       _.each @relationships, (relType) =>
         relType.forEach (rel) =>
-          ops.push (cb) => rel.delete jobs, cb
+          ops.push (cb) => rel.delete batch, cb
       async.parallel ops, (err) =>
         if not master
           cb()
@@ -139,7 +139,7 @@ module.exports = class Node extends BaseNode
           # to be deleted before nodes
           resources = []
           sorted = []
-          _.each jobs, (job) =>
+          _.each batch, (job) =>
             if job.to not in resources
               resources.push job.to
               if job.to.search("node") > -1

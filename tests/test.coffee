@@ -24,8 +24,8 @@ Node.types.Person = class Person extends Node
     console.log "Person (Node)"
     super db, data
   
-  delete: (jobs, deps, cb) =>
-    super jobs, "Owns", cb
+  delete: (batch, deps, cb) =>
+    super batch, "Owns", cb
 
 #
 Node.types.Possession = class Possession extends Node
@@ -33,8 +33,8 @@ Node.types.Possession = class Possession extends Node
     console.log "Possession (Node)"
     super db, data
     
-  delete: (jobs, deps, cb) =>
-    super jobs, "Stores", cb
+  delete: (batch, deps, cb) =>
+    super batch, "Stores", cb
 
 #
 Relationship.types.Knows = class Knows extends Relationship
@@ -116,7 +116,6 @@ buildup = ->
 teardown = ->
   console.log "teardown"
   db.queryNodeIndex "people", "*", "*", (err, people) =>
-    jobs = []
     ops = []
     people.forEach (person) => ops.push (cb) => person.delete null, null, cb
     async.parallel ops, (err) =>

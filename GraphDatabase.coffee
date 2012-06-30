@@ -27,26 +27,25 @@ module.exports = class GraphDatabase
       cb? err
   
   #
-  batch: (jobs, cb) =>
-    console.log "JOBS", jobs
-    opts = url: @services.batch, json: jobs
+  batch: (batch, cb) =>
+    opts = url: @services.batch, json: batch
     request.post opts, (err, resp, data) =>
       cb handleError(err, resp), data
   
   # super lame but we need this 
   # until the batch API improves
-  batchUnique: (jobs, cb) =>
+  batchUnique: (batch, cb) =>
     @queued ?= {}
     @pending ?= {}
     pending = []
     unique = []
     queuekey = null
     lookup = {}
-    _.each @pending, (batch) => 
-      batch.forEach (job) => lookup[JSON.stringify job] = batch
-      pending = pending.concat batch
+    _.each @pending, (pendingBatch) => 
+      pendingBatch.forEach (job) => lookup[JSON.stringify job] = pendingBatch
+      pending = pending.concat pendingBatch
     pending.reverse()
-    jobs.forEach (job) =>
+    batch.forEach (job) =>
       duplicate = _.find pending, (pendingJob) => if _.isEqual job, pendingJob then pendingJob
       if duplicate
         queuekey = lookup[JSON.stringify duplicate][0]
@@ -58,15 +57,15 @@ module.exports = class GraphDatabase
       batchkey = JSON.stringify unique[0]
       @pending[batchkey] = unique
       @queued[batchkey] = []
-      job = =>
+      batchRequest = =>
         @batch unique, (args...) =>
           @queued[batchkey].forEach (job) => job()
           if _.keys(@queued).length is 0 
             delete @pending
           delete @queued[batchkey]
           cb args...
-      if not @queued[JSON.stringify queuekey]?.push job
-        job()
+      if not @queued[JSON.stringify queuekey]?.push batchRequest
+        batchRequest()
   
   #
   queryNodeIndex: (args...) =>

@@ -36,20 +36,20 @@ module.exports = class Relationship extends BaseNode
       cb err
   
   #
-  delete: (jobs, cb) =>
-    if not jobs
+  delete: (batch, cb) =>
+    if not batch
       master = true
-      jobs = []
+      batch = []
     
-    jobs.push
+    batch.push
       to: @self.split(@db.url)[1]
       method: "DELETE"
     
     if master
-      @db.batchUnique jobs, cb
+      @db.batchUnique batch, cb
     else
       if @end
-        @end.delete jobs, null, (args...) ->
+        @end.delete batch, null, (args...) ->
           cb args...
       else
         cb()
