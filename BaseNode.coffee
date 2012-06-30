@@ -46,10 +46,6 @@ module.exports = class BaseNode
       cb err
   
   #
-  delete: (jobs, cb) =>
-    @db.batchUnique jobs, cb
-  
-  #
   index: (index, key, cb) =>
     if not @self?
       cb handleError type + " must exist in order to index"

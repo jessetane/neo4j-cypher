@@ -33,7 +33,8 @@ module.exports = class GraphDatabase
     request.post opts, (err, resp, data) =>
       cb handleError(err, resp), data
   
-  # ensure parallel batches are unique and queue dependencies
+  # super lame but we need this 
+  # until the batch API improves
   batchUnique: (jobs, cb) =>
     @queued ?= {}
     @pending ?= {}

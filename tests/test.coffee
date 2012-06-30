@@ -25,7 +25,7 @@ Node.types.Person = class Person extends Node
     super db, data
   
   delete: (deps, jobs, cb) =>
-    super "Owns", jobs, cb
+    super jobs, "Owns", cb
 
 #
 Node.types.Possession = class Possession extends Node
@@ -58,9 +58,9 @@ buildup = ->
   b = new Person db, { name:"B", age: 10 }
   c = new Person db, { name:"C", age: 72 }
   ops = ops.concat [
-    (cb) -> a.createAndIndexUnique "people", "name", cb
-    (cb) -> b.createAndIndexUnique "people", "name", cb
-    (cb) -> c.createAndIndexUnique "people", "name", cb
+    (cb) -> a.createAndIndex "people", "name", cb
+    (cb) -> b.createAndIndex "people", "name", cb
+    (cb) -> c.createAndIndex "people", "name", cb
   ]
 
   # make three possessions

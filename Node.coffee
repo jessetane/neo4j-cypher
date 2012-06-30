@@ -13,13 +13,9 @@ BaseNode = require "./BaseNode"
 
 module.exports = class Node extends BaseNode
   @types: {}
-  
-  #
-  createAndIndex: (index, key, cb) =>
-    console.log "create"
     
   #
-  createAndIndexUnique: (index, key, cb) =>
+  createAndIndex: (index, key, cb) =>
     index = index or @constructor.index
     key = key or @constructor.indexKey
     @properties._type_ = @constructor.name
@@ -33,7 +29,7 @@ module.exports = class Node extends BaseNode
       if resp.statusCode is 200
         err = new Error 409
         err.message = "Node exists"
-      else 
+      else
         err = handleError err, resp
       if not err
         @deserialize data
@@ -65,7 +61,7 @@ module.exports = class Node extends BaseNode
     @fetchRelationships null, null, relationshipTypesToFetchEndNodesFor, cb
   
   #
-  fetchRelationships: (types, direction, relationshipTypesToFetchEndNodesFor, cb) =>
+  fetchRelationships: (types, direction, typesToFetchEndNodesFor, cb) =>
     Relationship = require "./Relationship"
     url = "#{@self}/relationships/"
     if direction
@@ -90,9 +86,9 @@ module.exports = class Node extends BaseNode
           rels.push rel
           @relationships[relationship.type] ?= []
           @relationships[relationship.type].push rel
-        if relationshipTypesToFetchEndNodesFor?
-          if not _.isBoolean relationshipTypesToFetchEndNodesFor
-            relTypes = relationshipTypesToFetchEndNodesFor
+        if typesToFetchEndNodesFor?
+          if not _.isBoolean typesToFetchEndNodesFor
+            relTypes = typesToFetchEndNodesFor
             if not _.isArray relTypes
               relTypes = [ relTypes ]
           ops = []
@@ -119,7 +115,7 @@ module.exports = class Node extends BaseNode
       cb err
 
   #
-  delete: (relationshipsToDeleteEndNodesFor, jobs, cb) =>
+  delete: (jobs, relationshipsToDeleteEndNodesFor, cb) =>
     if not jobs
       master = true
       jobs = []
@@ -136,7 +132,7 @@ module.exports = class Node extends BaseNode
           ops.push (cb) => rel.delete jobs, cb
       async.parallel ops, (err) =>
         if not master
-          cb null, jobs
+          cb()
         else
           
           # for deletion, we need relationships 
@@ -151,22 +147,5 @@ module.exports = class Node extends BaseNode
               else
                 sorted.unshift job
           
-          super sorted, (err) =>
-            if err
-              cb err
-              ###
-              # there is always the chance that a mutual
-              # relationship was deleted by a parallel
-              # request, so it's worth retrying at least until
-              # we don't get a RelationshipNotFoundException
-              if err.message.search("RelationshipNotFoundException") > -1
-                @_backoff ?= 100
-                console.log "RelationshipNotFoundException - retrying in " + @_backoff + "ms..."
-                setTimeout => 
-                  @delete relationshipsToDeleteEndNodesFor, null, cb
-                , @_backoff += 100
-              else
-                cb err
-              ###
-            else
-              cb()
+          @db.batchUnique sorted, (err) =>
+            cb err
