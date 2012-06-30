@@ -24,7 +24,7 @@ Node.types.Person = class Person extends Node
     console.log "Person (Node)"
     super db, data
   
-  delete: (deps, jobs, cb) =>
+  delete: (jobs, deps, cb) =>
     super jobs, "Owns", cb
 
 #
@@ -32,6 +32,9 @@ Node.types.Possession = class Possession extends Node
   constructor: (db, data) ->
     console.log "Possession (Node)"
     super db, data
+    
+  delete: (jobs, deps, cb) =>
+    super jobs, "Stores", cb
 
 #
 Relationship.types.Knows = class Knows extends Relationship
@@ -73,6 +76,16 @@ buildup = ->
     (cb) -> cigarettes.save cb
   ]
   
+  # make three plain nodes
+  one = new Node db, storage:"unit"
+  two = new Node db, storage:"r2d2"
+  three = new Node db, storage:"thunderclap"
+  ops = ops.concat [
+    (cb) -> one.save cb
+    (cb) -> two.save cb
+    (cb) -> three.save cb
+  ]
+  
   async.parallel ops, (err, res) ->
     if err = handleError err, res
       console.log "Test stage 1 failed :(", err
@@ -86,6 +99,9 @@ buildup = ->
         (cb) -> a.createRelationship "Owns", keys, null, cb
         (cb) -> a.createRelationship "Owns", money, null, cb
         (cb) -> a.createRelationship "Owns", cigarettes, null, cb
+        (cb) -> keys.createRelationship "Stores", one, null, cb
+        (cb) -> money.createRelationship "Stores", two, null, cb
+        (cb) -> cigarettes.createRelationship "Stores", three, null, cb
       ]
       
       async.parallel ops, (err, res) ->

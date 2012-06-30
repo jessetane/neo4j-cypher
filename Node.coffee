@@ -113,7 +113,7 @@ module.exports = class Node extends BaseNode
       if not err = handleError err, resp
         @deserialize data
       cb err
-
+  
   #
   delete: (jobs, relationshipsToDeleteEndNodesFor, cb) =>
     if not jobs
