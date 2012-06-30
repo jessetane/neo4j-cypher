@@ -24,7 +24,7 @@ module.exports = class BaseNode
   #
   deserialize: (data={}) =>
     @data = data
-    @properties = data.data or data
+    @properties = _.extend @properties or {}, data.data or data
   
   #
   serialize: =>
