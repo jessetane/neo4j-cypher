@@ -13,15 +13,14 @@ module.exports.handleError = (error, response) ->
   
   # http errors
   if not error and response?.statusCode >= 400
-    error = new Error response.statusCode
-    error.message = response.statusCode
+    error = new Error response.body
     try
       error.message = JSON.parse(response.body.message).exception
-    catch err
+    catch e
       try
         error.message = response.body.exception
     
-  # other types, let 
+  # other types
   else if error and not error instanceof Error
     
     # neo4j errors are http response objects
@@ -32,18 +31,12 @@ module.exports.handleError = (error, response) ->
           dbError = JSON.parse dbError
       else
         dbError = "Unknown database error"
-      message = dbError.message or dbError
-      error = new Error message
-      error.message = message
+      error = new Error dbError.message or dbError
 
     # hm, some other type... string?
     else
-      message = capitalize error.toString()
-      error = new Error message
-      error.message = message
-
-  else if error
-    # make sure we have some kind of message
-    error.message ?= error.toString()
-    
+      error = new Error capitalize error.toString()
+  
+  error?.message ?= response.body
+  error?.details = response.body
   return error

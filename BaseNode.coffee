@@ -47,7 +47,7 @@ module.exports = class BaseNode
   
   #
   delete: (jobs, cb) =>
-    @db.transact jobs, cb
+    @db.batchUnique jobs, cb
   
   #
   index: (index, key, cb) =>

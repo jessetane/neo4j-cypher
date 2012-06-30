@@ -14,9 +14,8 @@ Node = neo4j.Node
 Relationship = neo4j.Relationship
 db = new neo4j.GraphDatabase "http://localhost", "7474", (err) -> 
   console.log "DB connected! Running tests...", db
-  #batchup()
-  #buildup()
-  teardown()
+  buildup()
+  #teardown()
 
 
 #
@@ -94,22 +93,18 @@ buildup = ->
           console.log "Test stage 2 failed :(", err
         else
           console.log "All tests succeeded :)"
+          teardown()
           
-
+          
 #
 teardown = ->
   console.log "teardown"
-  
   db.queryNodeIndex "people", "*", "*", (err, people) =>
     jobs = []
     ops = []
-    people.forEach (person) => ops.push (cb) => person.delete null, jobs, cb
+    people.forEach (person) => ops.push (cb) => person.delete null, null, cb
     async.parallel ops, (err) =>
       if err
-        console.log "Test failed :(", err
+        console.log "Test failed :(", err.message, err.details
       else
-        db.transact jobs, (err) =>
-          if err
-            console.log "Transaction failed :(", err
-          else
-            console.log "All tests succeeded :)"
+        console.log "All tests succeeded :)"
