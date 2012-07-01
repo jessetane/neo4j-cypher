@@ -56,8 +56,5 @@ exports.id = (url) ->
 
 #
 exports.proxyProperty = (klass, propertyName) ->
-  Object.defineProperty klass::, propertyName,
-    get: ->
-      return @property[propertyName]
-    set: (val) ->
-      @property[propertyName] = val
+  klass::__defineGetter__ propertyName, -> @properties[propertyName]
+  klass::__defineSetter__ propertyName, (val) -> @properties[propertyName] = val
