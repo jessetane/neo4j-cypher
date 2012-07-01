@@ -2,6 +2,8 @@
 #
 #
 
+console.dir = require "cdir"
+
 
 _ = require "underscore"
 async = require "async"
@@ -16,6 +18,7 @@ db = new neo4j.GraphDatabase "http://localhost", "7474", (err) ->
   console.log "DB connected! Running tests...", db
   buildup()
   #teardown()
+  #cypher()
 
 
 #
@@ -57,13 +60,13 @@ buildup = ->
   ops = []
   
   # make 3 people
-  a = new Person db, { name:"A", age: 42 }
+  a = new Person db, { name:"A", born: new Date }
   b = new Person db, { name:"B", age: 10 }
   c = new Person db, { name:"C", age: 72 }
   ops = ops.concat [
-    (cb) -> a.createAndIndex "people", "name", cb
-    (cb) -> b.createAndIndex "people", "name", cb
-    (cb) -> c.createAndIndex "people", "name", cb
+    (cb) -> a.createAndIndex "users", "name", cb
+    (cb) -> b.createAndIndex "users", "name", cb
+    (cb) -> c.createAndIndex "users", "name", cb
   ]
 
   # make three possessions
@@ -76,7 +79,7 @@ buildup = ->
     (cb) -> cigarettes.save cb
   ]
   
-  # make three plain nodes
+  # make three vanilla nodes
   one = new Node db, storage:"unit"
   two = new Node db, storage:"r2d2"
   three = new Node db, storage:"thunderclap"
@@ -99,9 +102,14 @@ buildup = ->
         (cb) -> a.createRelationship "Owns", keys, null, cb
         (cb) -> a.createRelationship "Owns", money, null, cb
         (cb) -> a.createRelationship "Owns", cigarettes, null, cb
-        (cb) -> keys.createRelationship "Stores", one, null, cb
+        (cb) -> b.createRelationship "Owns", money, null, cb
+        (cb) -> c.createRelationship "Owns", money, null, cb
+        (cb) -> money.createRelationship "Stores", one, null, cb
         (cb) -> money.createRelationship "Stores", two, null, cb
-        (cb) -> cigarettes.createRelationship "Stores", three, null, cb
+        (cb) -> money.createRelationship "Stores", three, null, cb
+        (cb) -> a.createRelationship "Mega", one, null, cb
+        (cb) -> a.createRelationship "Mega", two, null, cb
+        (cb) -> b.createRelationship "Mega", three, null, cb
       ]
       
       async.parallel ops, (err, res) ->
@@ -109,13 +117,23 @@ buildup = ->
           console.log "Test stage 2 failed :(", err
         else
           console.log "All tests succeeded :)"
-          teardown()
+          #teardown()
           
-          
+#
+cypher = ->
+  q = """
+  START n=node:Users("name:*")
+  MATCH n<-[:Stores]-()<-[:Owns]-d
+  RETURN n
+  """
+  db.cypher q, null, (err, data) ->
+    console.dir data.data
+  
+
 #
 teardown = ->
   console.log "teardown"
-  db.queryNodeIndex "people", "*", "*", (err, people) =>
+  db.queryNodeIndex "users", "*", "*", (err, people) =>
     ops = []
     people.forEach (person) => ops.push (cb) => person.delete null, null, cb
     async.parallel ops, (err) =>

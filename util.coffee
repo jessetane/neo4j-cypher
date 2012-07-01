@@ -5,11 +5,11 @@
 _ = require "underscore"
 
 #
-capitalize = (str) ->
+exports.capitalize = (str) ->
   str.charAt(0).toUpperCase() + str.slice 1
 
 #
-module.exports.handleError = (error, response) ->
+exports.handleError = (error, response) ->
   
   # http errors
   if not error and response?.statusCode >= 400
@@ -35,7 +35,29 @@ module.exports.handleError = (error, response) ->
 
     # hm, some other type... string?
     else
-      error = new Error capitalize error.toString()
+      error = new Error exports.capitalize error.toString()
   
   error?.message ?= response.body
   return error
+
+# for deletion, we need relationships 
+# to be deleted before nodes
+exports.sortBatchForDelete = (batch) ->
+  sorted = []
+  _.each batch, (job) =>
+    if job.to.search("node") > -1
+      sorted.push job
+    else
+      sorted.unshift job
+ 
+#     
+exports.id = (url) ->
+  _.last url.split "/"
+
+#
+exports.proxyProperty = (klass, propertyName) ->
+  Object.defineProperty klass::, propertyName,
+    get: ->
+      return @property[propertyName]
+    set: (val) ->
+      @property[propertyName] = val

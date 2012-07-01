@@ -15,6 +15,7 @@ module.exports = class BaseNode
   # getter
   @::__defineGetter__ "nodetype", -> if @ instanceof require "./Node" then "node" else "relationship"
   @::__defineGetter__ "self", -> @data?.self
+  @::__defineGetter__ "id", -> util.id @self
   
   #
   constructor: (db, data={}) ->
@@ -31,20 +32,22 @@ module.exports = class BaseNode
     JSON.stringify @properties
   
   #
-  fetch: (cb) =>
+  save: (cb) =>
     if @self
-      opts = url: @self
+      url = @self + "/properties"
+      method = "put"
+    else if @nodetype == "relationship"
+      cb new Error "Relationships cannot be created directly"
     else
-      index = encodeURIComponent @constructor.index
-      key = encodeURIComponent @constructor.indexKey
-      val = encodeURIComponent @properties[@constructor.indexKey]
-      type = @nodetype + "_index"
-      opts = url: "#{@db.services[type]}/#{index}/#{key}/#{val}"
-    request.get opts, (err, resp, data) =>
+      url = "#{@db.services[@nodetype]}"
+      method = "post"
+      @properties._type_ = @constructor.name
+    opts = url: url, json: @properties
+    request[method] opts, (err, resp, data) =>
       if not err = handleError err, resp
-        @deserialize JSON.parse data
+        @deserialize data
       cb err
-  
+      
   #
   index: (index, key, cb) =>
     if not @self?
@@ -58,3 +61,17 @@ module.exports = class BaseNode
         value: @properties[key]
       response = request.post opts, (err, resp) =>
         cb handleError err, resp
+      
+  #
+  delete: (cb) =>
+    job = 
+      to: @self.split(@db.url)[1]
+      method: "DELETE"
+    
+    # if we have a callback, we are master
+    if _.isFunction cb
+      @db.batchUnique batch, cb
+    
+    # otherwise, just return the job
+    else
+      return job

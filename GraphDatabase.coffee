@@ -88,7 +88,7 @@ module.exports = class GraphDatabase
         new klass @, result
       cb handleError(err, resp), results
   
-  # TODO
+  #
   cypher: (query, params, cb) =>
     query = query: query
     if params then query.params = params
@@ -96,4 +96,4 @@ module.exports = class GraphDatabase
       url: "#{@services.cypher}"
       json: query
     request.post opts, (err, resp, data) =>
-      cb handleError(err, resp), data
+      cb handleError(err, resp), data.data
