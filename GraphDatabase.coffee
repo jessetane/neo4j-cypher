@@ -10,11 +10,11 @@ handleError = util.handleError
 
 
 module.exports = class GraphDatabase
-  @db: null
+  @databases: {}
   
   #
   constructor: (host, port, cb) ->
-    @constructor.db = @
+    @constructor.databases.default ?= @
     @url = host + ":" + port + "/db/data"
     @version = ""
     @services = {}
@@ -32,8 +32,8 @@ module.exports = class GraphDatabase
     request.post opts, (err, resp, data) =>
       cb handleError(err, resp), data
   
-  # super lame but we need this 
-  # until the batch API improves
+  # super lame but i think we need this
+  # until the batch API improves...
   batchUnique: (batch, cb) =>
     @queued ?= {}
     @pending ?= {}

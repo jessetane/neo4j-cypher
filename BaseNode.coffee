@@ -18,8 +18,8 @@ module.exports = class BaseNode
   @::__defineGetter__ "id", -> util.id @self
   
   #
-  constructor: (db, data={}) ->
-    @db = db
+  constructor: (data={}) ->
+    @db = GraphDatabase.databases.default
     @deserialize data
   
   #
