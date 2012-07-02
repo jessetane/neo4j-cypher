@@ -29,7 +29,7 @@ module.exports = class BaseNode
   
   #
   serialize: =>
-    JSON.stringify @properties
+    @properties
   
   #
   save: (cb) =>
@@ -42,7 +42,7 @@ module.exports = class BaseNode
       url = "#{@db.services[@nodetype]}"
       method = "post"
       @properties._type_ = @constructor.name
-    opts = url: url, json: @properties
+    opts = url: url, json: @serialize()
     request[method] opts, (err, resp, data) =>
       if not err = handleError err, resp
         @deserialize data

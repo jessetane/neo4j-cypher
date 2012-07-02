@@ -24,7 +24,7 @@ module.exports = class Node extends BaseNode
       json: 
         key: key
         value: @properties[key]
-        properties: @properties
+        properties: @serialize()
     request.post opts, (err, resp, data) =>
       if resp.statusCode is 200
         err = new Error 409
