@@ -32,8 +32,7 @@ module.exports = class GraphDatabase
     request.post opts, (err, resp, data) =>
       cb handleError(err, resp), data
   
-  # super lame but i think we need this
-  # until the batch API improves...
+  # uh...
   batchUnique: (batch, cb) =>
     @queued ?= {}
     @pending ?= {}
@@ -85,7 +84,7 @@ module.exports = class GraphDatabase
       results = JSON.parse data
       results = results.map (result) =>
         klass = baseType.types[result.type or result.data._type_] or baseType
-        new klass @, result
+        new klass result
       cb handleError(err, resp), results
   
   #

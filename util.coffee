@@ -33,9 +33,9 @@ exports.handleError = (error, response) ->
         dbError = "Unknown database error"
       error = new Error dbError.message or dbError
 
-    # hm, some other type... string?
-    else
-      error = new Error exports.capitalize error.toString()
+  # hm, some other type... string?
+  else if error
+    error = new Error exports.capitalize error.toString()
   
   error?.message ?= response.body
   return error
