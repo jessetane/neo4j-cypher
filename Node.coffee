@@ -12,16 +12,15 @@ BaseNode = require "./BaseNode"
 
 
 module.exports = class Node extends BaseNode
-  @types: {}
-  
+  @types: {}    
+
   #
   createAndIndexUnique: (index, key, cb) =>
     index = index or @constructor.index
     key = key or @constructor.indexKey
-    @properties._type_ = @constructor.name
     opts = 
       url: "#{@db.services.node_index}/#{index}?unique"
-      json: 
+      json:
         key: key
         value: @properties[key]
         properties: @serialize()
@@ -34,15 +33,3 @@ module.exports = class Node extends BaseNode
       if not err
         @deserialize data
       cb err
-  
-  #
-  createRelationship: (type, node, properties, cb) =>
-    if not @self or not node.self
-      return cb handleError "Nodes must exist to create relationships"
-    data = {}
-    data.to = node.self
-    data.type = type
-    data.data = properties
-    opts = url: @self + "/relationships", json: data
-    request.post opts, (err, resp, data) =>
-      cb handleError err, resp

@@ -14,15 +14,17 @@ exports.handleError = (error, response) ->
   # http errors
   if not error and response?.statusCode >= 400
     error = new Error response.body
-    try
-      error.message = JSON.parse(response.body.message).exception
-    catch e
+    if _.isString response.body
       try
-        error.message = response.body.exception
+        error.message = JSON.parse(response.body.message).exception
+      catch e
+        try
+          error.message = JSON.parse(response.body).exception
+    else
+      error.message = response.body.message or response.body.exception
     
   # other types
   else if error and not error instanceof Error
-    
     # neo4j errors are http response objects
     if error.statusCode
       if error.body
@@ -33,11 +35,11 @@ exports.handleError = (error, response) ->
         dbError = "Unknown database error"
       error = new Error dbError.message or dbError
 
-  # hm, some other type... string?
-  else if error
-    error = new Error exports.capitalize error.toString()
+    # hm, some other type... string?
+    else if error
+      error = new Error exports.capitalize error.toString()
   
-  error?.message ?= response.body
+  #if error then console.log "DEBUG", response.body
   return error
 
 # for deletion, we need relationships 
@@ -49,6 +51,7 @@ exports.sortBatchForDelete = (batch) ->
       sorted.push job
     else
       sorted.unshift job
+  return sorted
  
 #     
 exports.id = (url) ->

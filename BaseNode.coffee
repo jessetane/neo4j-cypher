@@ -18,14 +18,14 @@ module.exports = class BaseNode
   @::__defineGetter__ "id", -> util.id @self
   
   #
-  constructor: (data={}) ->
+  constructor: (data) ->
     @db = GraphDatabase.databases.default
     @deserialize data
   
   #
-  deserialize: (data={}) =>
-    @data = data
-    @properties = _.extend @properties or {}, data.data or data
+  deserialize: (data) =>
+    @data = data or @data or {}
+    @properties = _.extend @properties or {}, data?.data or data
   
   #
   serialize: =>
@@ -41,13 +41,12 @@ module.exports = class BaseNode
     else
       url = "#{@db.services[@nodetype]}"
       method = "post"
-      @properties._type_ = @constructor.name
     opts = url: url, json: @serialize()
     request[method] opts, (err, resp, data) =>
       if not err = handleError err, resp
         @deserialize data
       cb err
-      
+  
   #
   index: (index, key, cb) =>
     if not @self?
@@ -61,17 +60,18 @@ module.exports = class BaseNode
         value: @properties[key]
       response = request.post opts, (err, resp) =>
         cb handleError err, resp
-      
+  
   #
   delete: (cb) =>
-    job = 
-      to: @self.split(@db.url)[1]
-      method: "DELETE"
-    
-    # if we have a callback, we are master
-    if _.isFunction cb
-      @db.batchUnique batch, cb
-    
-    # otherwise, just return the job
+    if @nodetype == "node"
+      q="""
+      START n=node(#{@id})
+      MATCH n-[r?]-()
+      DELETE r, n
+      """
     else
-      return job
+      q="""
+      START r=relationship(#{@id})
+      DELETE r
+      """
+    @db.cypherRaw q, null, cb

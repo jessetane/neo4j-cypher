@@ -27,68 +27,7 @@ module.exports = class GraphDatabase
       cb? err
   
   #
-  batch: (batch, cb) =>
-    opts = url: @services.batch, json: batch
-    request.post opts, (err, resp, data) =>
-      cb handleError(err, resp), data
-  
-  # uh...
-  batchUnique: (batch, cb) =>
-    @queued ?= {}
-    @pending ?= {}
-    pending = []
-    unique = []
-    queuekey = null
-    lookup = {}
-    _.each @pending, (pendingBatch) => 
-      pendingBatch.forEach (job) => lookup[JSON.stringify job] = pendingBatch
-      pending = pending.concat pendingBatch
-    pending.reverse()
-    batch.forEach (job) =>
-      duplicate = _.find pending, (pendingJob) => if _.isEqual job, pendingJob then pendingJob
-      if duplicate
-        queuekey = lookup[JSON.stringify duplicate][0]
-      else
-        unique.push job
-    if unique.length == 0
-      cb()
-    else
-      batchkey = JSON.stringify unique[0]
-      @pending[batchkey] = unique
-      @queued[batchkey] = []
-      batchRequest = =>
-        @batch unique, (args...) =>
-          @queued[batchkey].forEach (job) => job()
-          if _.keys(@queued).length is 0 
-            delete @pending
-          delete @queued[batchkey]
-          cb args...
-      if not @queued[JSON.stringify queuekey]?.push batchRequest
-        batchRequest()
-  
-  #
-  queryNodeIndex: (args...) =>
-    @queryIndex "node", args...
-    
-  #
-  queryRelationshipIndex: (args...) =>
-    @queryIndex "relationship", args...
-  
-  #
-  queryIndex: (type, index, key, val, cb) =>
-    baseType = if type == "node" then require "./Node" else require "./Relationship"
-    type = type + "_index"
-    query = encodeURIComponent key + ":" + val
-    opts = url: "#{@services[type]}/#{index}?query=#{query}"
-    request.get opts, (err, resp, data) =>
-      results = JSON.parse data
-      results = results.map (result) =>
-        klass = baseType.types[result.type or result.data._type_] or baseType
-        new klass result
-      cb handleError(err, resp), results
-  
-  #
-  cypher: (query, params, cb) =>
+  cypherRaw: (query, params, cb) =>
     query = query: query
     if params then query.params = params
     opts = 
@@ -96,3 +35,26 @@ module.exports = class GraphDatabase
       json: query
     request.post opts, (err, resp, data) =>
       cb handleError(err, resp), data.data
+  
+  #
+  cypher: (query, output, cb) =>
+    @cypherRaw query, null, (err, paths) =>
+      if err
+        cb err
+      else
+        Node = require "./Node"
+        Relationship = require "./Relationship"
+        nodepaths = paths.map (path) =>
+          path.map (node, i) =>
+            klass = output?[i] or if node.all_relationships? then Node else Relationship
+            new klass node
+        cb null, nodepaths
+  
+  #
+  delete: (cb) =>
+    q = """
+    START n=nodes(*)
+    MATCH n-[r?]-()
+    DELETE r, n
+    """
+    @cypherRaw q, null, cb
