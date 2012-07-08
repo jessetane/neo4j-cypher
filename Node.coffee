@@ -22,7 +22,7 @@ module.exports = class Node extends BaseNode
       url: "#{@db.services.node_index}/#{index}?unique"
       json:
         key: key
-        value: @properties[key]
+        value: encodeURIComponent @properties[key]
         properties: @serialize()
     request.post opts, (err, resp, data) =>
       if resp.statusCode is 200

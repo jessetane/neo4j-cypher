@@ -10,7 +10,6 @@ exports.capitalize = (str) ->
 
 #
 exports.handleError = (error, response) ->
-  
   # http errors
   if not error and response?.statusCode >= 400
     error = new Error response.body
@@ -24,7 +23,7 @@ exports.handleError = (error, response) ->
       error.message = response.body.message or response.body.exception
     
   # other types
-  else if error and not error instanceof Error
+  else if error and error not instanceof Error
     # neo4j errors are http response objects
     if error.statusCode
       if error.body
@@ -61,3 +60,16 @@ exports.id = (url) ->
 exports.proxyProperty = (klass, propertyName) ->
   klass::__defineGetter__ propertyName, -> @properties[propertyName]
   klass::__defineSetter__ propertyName, (val) -> @properties[propertyName] = val
+
+###
+exports.proxyProperty = (klass, propertyName, encode) ->
+  klass::__defineGetter__ propertyName, -> 
+    val = @properties[propertyName]
+    if encode
+      val = decodeURIComponent val
+    return val
+  klass::__defineSetter__ propertyName, (val) -> 
+    if encode
+      val = encodeURIComponent val
+    @properties[propertyName] = val
+###

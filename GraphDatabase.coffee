@@ -34,11 +34,12 @@ module.exports = class GraphDatabase
       url: "#{@services.cypher}"
       json: query
     request.post opts, (err, resp, data) =>
-      cb handleError(err, resp), data.data
+      err = handleError(err, resp)
+      cb err, data.data
   
   #
-  cypher: (query, output, cb) =>
-    @cypherRaw query, null, (err, paths) =>
+  cypher: (query, params, output, cb) =>
+    @cypherRaw query, params, (err, paths) =>
       if err
         cb err
       else
@@ -46,9 +47,12 @@ module.exports = class GraphDatabase
         Relationship = require "./Relationship"
         nodepaths = paths.map (path) =>
           path.map (node, i) =>
-            klass = output?[i] or if node.all_relationships? then Node else Relationship
-            new klass node
-        cb null, nodepaths
+            if not node
+              return null
+            else
+              klass = output?[i] or if node.all_relationships? then Node else Relationship
+              new klass node
+        cb err, nodepaths
   
   #
   delete: (cb) =>
