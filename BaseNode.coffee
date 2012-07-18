@@ -15,7 +15,7 @@ module.exports = class BaseNode
   # getter
   @::__defineGetter__ "nodetype", -> if @ instanceof require "./Node" then "node" else "relationship"
   @::__defineGetter__ "self", -> @data?.self
-  @::__defineGetter__ "id", -> util.id @self
+  @::__defineGetter__ "id", -> (util.id @self) or @properties.id
   
   #
   constructor: (data) ->

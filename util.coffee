@@ -38,7 +38,7 @@ exports.handleError = (error, response) ->
     else if error
       error = new Error exports.capitalize error.toString()
   
-  #if error then console.log "DEBUG", response.body
+  if error and response then console.log "DEBUG", response.body
   return error
 
 # for deletion, we need relationships 
@@ -54,7 +54,8 @@ exports.sortBatchForDelete = (batch) ->
  
 #     
 exports.id = (url) ->
-  _.last url.split "/"
+  if url
+    _.last url.split "/"
 
 #
 exports.proxyProperty = (klass, propertyName) ->
