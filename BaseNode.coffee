@@ -3,7 +3,6 @@
 #
 
 
-_ = require "underscore"
 util = require "./util"
 handleError = util.handleError
 request = require "request"
@@ -25,7 +24,7 @@ module.exports = class BaseNode
   #
   deserialize: (data) =>
     @data = data or @data or {}
-    @properties = _.extend @properties or {}, data?.data or data
+    @properties = util.extend @properties or {}, data?.data or data
   
   #
   serialize: =>
@@ -37,7 +36,7 @@ module.exports = class BaseNode
       url = @self + "/properties"
       method = "put"
     else if @nodetype == "relationship"
-      cb new Error "Relationships cannot be created directly"
+      cb handleError "Relationships cannot be created directly"
     else
       url = "#{@db.services[@nodetype]}"
       method = "post"
@@ -48,18 +47,26 @@ module.exports = class BaseNode
       cb err
   
   #
-  index: (index, key, cb) =>
+  index: (index, key, value, cb) =>
     if not @self?
       cb handleError type + " must exist in order to index"
     else
       type = @nodetype + "_index"
-      url: "#{@db.services[type]}/#{index}"
-      json:
-        uri: url
-        key: key
-        value: @properties[key]
+      opts =
+        url: "#{@db.services[type]}/#{index}"
+        json:
+          uri: @self
+          key: key
+          value: value
       response = request.post opts, (err, resp) =>
         cb handleError err, resp
+  
+  #
+  deindex: (index, key, cb) =>
+    type = @nodetype + "_index"
+    opts = url: "#{@db.services[type]}/#{index}/#{key}/#{@id}"
+    response = request.del opts, (err, resp) =>
+      cb handleError err, resp
   
   #
   delete: (cb) =>

@@ -3,7 +3,6 @@
 #
 
 
-_ = require "underscore"
 request = require "request"
 util = require "./util"
 handleError = util.handleError

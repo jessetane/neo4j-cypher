@@ -3,7 +3,6 @@
 #
 
 
-_ = require "underscore"
 async = require "async"
 request = require "request"
 util = require "./util"
@@ -15,14 +14,14 @@ module.exports = class Node extends BaseNode
   @types: {}    
 
   #
-  createAndIndexUnique: (index, key, cb) =>
+  createAndIndexUnique: (index, key, value, cb) =>
     index = index or @constructor.index
     key = key or @constructor.indexKey
     opts = 
       url: "#{@db.services.node_index}/#{index}?unique"
       json:
         key: key
-        value: encodeURIComponent @properties[key]
+        value: value
         properties: @serialize()
     request.post opts, (err, resp, data) =>
       if resp.statusCode is 200

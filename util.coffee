@@ -12,7 +12,7 @@ exports.capitalize = (str) ->
 exports.handleError = (error, response) ->
   # http errors
   if not error and response?.statusCode >= 400
-    error = new Error response.body
+    error = new Error
     if _.isString response.body
       try
         error.message = JSON.parse(response.body.message).exception
@@ -20,7 +20,12 @@ exports.handleError = (error, response) ->
         try
           error.message = JSON.parse(response.body).exception
     else
-      error.message = response.body.message or response.body.exception
+      if response.body?
+        error.message = response.body.message or response.body.exception
+      else if response.statusCode
+        error.message = response.statusCode
+      else
+        error.message = "Unknown Neo4j error"
     
   # other types
   else if error and error not instanceof Error
@@ -38,39 +43,19 @@ exports.handleError = (error, response) ->
     else if error
       error = new Error exports.capitalize error.toString()
   
-  if error and response then console.log "DEBUG", response.body
+  #if error and response then console.log "DEBUG", response.body
   return error
-
-# for deletion, we need relationships 
-# to be deleted before nodes
-exports.sortBatchForDelete = (batch) ->
-  sorted = []
-  _.each batch, (job) =>
-    if job.to.search("node") > -1
-      sorted.push job
-    else
-      sorted.unshift job
-  return sorted
  
 #     
 exports.id = (url) ->
   if url
-    _.last url.split "/"
+    parts = url.split "/"
+    parts[parts.length-1]
 
 #
 exports.proxyProperty = (klass, propertyName) ->
   klass::__defineGetter__ propertyName, -> @properties[propertyName]
   klass::__defineSetter__ propertyName, (val) -> @properties[propertyName] = val
 
-###
-exports.proxyProperty = (klass, propertyName, encode) ->
-  klass::__defineGetter__ propertyName, -> 
-    val = @properties[propertyName]
-    if encode
-      val = decodeURIComponent val
-    return val
-  klass::__defineSetter__ propertyName, (val) -> 
-    if encode
-      val = encodeURIComponent val
-    @properties[propertyName] = val
-###
+# should we make hard copies of these from underscore?
+exports.extend = _.extend
