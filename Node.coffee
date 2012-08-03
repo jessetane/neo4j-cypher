@@ -6,7 +6,6 @@
 async = require "async"
 request = require "request"
 util = require "./util"
-handleError = util.handleError
 BaseNode = require "./BaseNode"
 
 
@@ -25,10 +24,9 @@ module.exports = class Node extends BaseNode
         properties: @serialize()
     request.post opts, (err, resp, data) =>
       if resp.statusCode is 200
-        err = new Error 409
-        err.message = "Node exists"
+        err = new Error "Node exists"
       else
-        err = handleError err, resp
-      if not err
+        err = @db.handleError err, resp
+      if data
         @deserialize data
       cb err

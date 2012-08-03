@@ -4,7 +4,6 @@
 
 
 util = require "./util"
-handleError = util.handleError
 request = require "request"
 BaseNode = require "./BaseNode"
 

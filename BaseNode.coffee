@@ -4,7 +4,6 @@
 
 
 util = require "./util"
-handleError = util.handleError
 request = require "request"
 GraphDatabase = require "./GraphDatabase"
 
@@ -36,20 +35,20 @@ module.exports = class BaseNode
       url = @self + "/properties"
       method = "put"
     else if @nodetype == "relationship"
-      cb handleError "Relationships cannot be created directly"
+      cb new Error "Relationships cannot be created directly"
     else
       url = "#{@db.services[@nodetype]}"
       method = "post"
     opts = url: url, json: @serialize()
     request[method] opts, (err, resp, data) =>
-      if not err = handleError err, resp
+      if not err = @db.handleError err, resp
         @deserialize data
       cb err
   
   #
   index: (index, key, value, cb) =>
     if not @self?
-      cb handleError type + " must exist in order to index"
+      cb new Error type + " must exist in order to index"
     else
       type = @nodetype + "_index"
       opts =
@@ -59,14 +58,14 @@ module.exports = class BaseNode
           key: key
           value: value
       response = request.post opts, (err, resp) =>
-        cb handleError err, resp
+        cb @db.handleError err, resp
   
   #
   deindex: (index, key, cb) =>
     type = @nodetype + "_index"
     opts = url: "#{@db.services[type]}/#{index}/#{key}/#{@id}"
     response = request.del opts, (err, resp) =>
-      cb handleError err, resp
+      cb @db.handleError err, resp
   
   #
   delete: (cb) =>
