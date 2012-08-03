@@ -72,15 +72,6 @@ module.exports = class GraphDatabase
         cb err, nodepaths
   
   #
-  delete: (cb) =>
-    q = """
-    START n=nodes(*)
-    MATCH n-[r?]-()
-    DELETE r, n
-    """
-    @cypherRaw q, null, cb
-  
-  #
   handleError: (error, response) =>
     if response?.statusCode >= 400
       error = new Error
@@ -106,3 +97,12 @@ module.exports = class GraphDatabase
         @reconnect()
     
     return error
+
+  # Deletes all nodes in the graph, but doesn't account for indexes...
+  delete: (cb) =>
+    q = """
+    START n=nodes(*)
+    MATCH n-[r?]-()
+    DELETE r, n
+    """
+    @cypherRaw q, null, cb
