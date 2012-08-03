@@ -1,9 +1,9 @@
 {
   "name"          : "neo4j",
-  "description"   : "Neo4j graph database REST wrappers",
+  "description"   : "Neo4j graph database REST API wrappers",
   "author"        : "Jesse Tane <jesse.tane@gmail.com>",
   "main"          : "index.js",
-  "version"       : "0.0.1",
+  "version"       : "0.1.0",
   "dependencies"  : {
     "coffee-script" : "*",
     "request" : "*",
