@@ -34,7 +34,7 @@ module.exports = class GraphDatabase
       json: query
     request.post opts, (err, resp, data) =>
       err = handleError(err, resp)
-      cb err, data.data
+      cb err, data?.data
   
   #
   cypher: (query, params, output, cb) =>
