@@ -32,14 +32,17 @@ module.exports = class BaseNode
   save: (cb) =>
     if @self
       url = @self + "/properties"
-      method = "put"
+      method = "PUT"
     else if @nodetype == "relationship"
       cb new Error "Relationships cannot be created directly"
     else
       url = "#{@db.services[@nodetype]}"
-      method = "post"
-    opts = url: url, json: @serialize()
-    @db.request[method] opts, (err, resp, data) =>
+      method = "POST"
+    opts = 
+      url: url
+      method: method
+      json: @serialize()
+    @db.request opts, (err, resp, data) =>
       if not err = @db.handleError err, resp
         @deserialize data
       cb err
