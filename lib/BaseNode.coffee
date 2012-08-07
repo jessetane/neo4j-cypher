@@ -4,7 +4,6 @@
 
 
 util = require "./util"
-request = require "request"
 GraphDatabase = require "./GraphDatabase"
 
 
@@ -40,7 +39,7 @@ module.exports = class BaseNode
       url = "#{@db.services[@nodetype]}"
       method = "post"
     opts = url: url, json: @serialize()
-    request[method] opts, (err, resp, data) =>
+    @db.request[method] opts, (err, resp, data) =>
       if not err = @db.handleError err, resp
         @deserialize data
       cb err
@@ -53,18 +52,21 @@ module.exports = class BaseNode
       type = @nodetype + "_index"
       opts =
         url: "#{@db.services[type]}/#{index}"
+        method: "POST"
         json:
           uri: @self
           key: key
           value: value
-      response = request.post opts, (err, resp) =>
+      @db.request opts, (err, resp) =>
         cb @db.handleError err, resp
   
   #
   deindex: (index, key, cb) =>
     type = @nodetype + "_index"
-    opts = url: "#{@db.services[type]}/#{index}/#{key}/#{@id}"
-    response = request.del opts, (err, resp) =>
+    opts = 
+      url: "#{@db.services[type]}/#{index}/#{key}/#{@id}"
+      method: "DELETE"
+    @db.request opts, (err, resp) =>
       cb @db.handleError err, resp
   
   #

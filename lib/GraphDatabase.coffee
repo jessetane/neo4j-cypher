@@ -13,23 +13,27 @@ module.exports = class GraphDatabase
   @databases: {}
   
   #
-  constructor: (host, port, cb) ->
+  constructor: (host, port, statusHandler) ->
     @constructor.databases.default ?= @
     @url = host + ":" + port + "/db/data"
     @version = ""
     @services = {}
     @connected = false
-    @connect cb
+    @statusHandler = statusHandler
   
   #
   connect: (cb) =>
+    @connecting = true
     opts =
       url: @url
-    request.get opts, (err, resp, body) =>
+      method: "GET"
+    request opts, (err, resp, body) =>
+      @connecting = false
       if not err = @handleError err, resp
         @services = JSON.parse body
         @version = @services.neo4j_version
         @connected = true
+      @statusHandler?()
       cb? err
   
   #
@@ -37,7 +41,8 @@ module.exports = class GraphDatabase
     @reconnecting = backoff.exponential initialDelay: 250
     @reconnecting.on "backoff", (attempt, delay) =>
       if not @connected
-        @connect()
+        if not @connecting
+          @connect()
         @reconnecting.backoff()
       else
         delete @reconnecting
@@ -49,8 +54,9 @@ module.exports = class GraphDatabase
     if params then query.params = params
     opts = 
       url: "#{@services.cypher}"
+      method: "POST"
       json: query
-    request.post opts, (err, resp, data) =>
+    @request opts, (err, resp, data) =>
       err = @handleError(err, resp)
       cb err, data?.data
   
@@ -70,6 +76,15 @@ module.exports = class GraphDatabase
               klass = output?[i] or if node.all_relationships? then Node else Relationship
               new klass node
         cb err, nodepaths
+  
+  #
+  request: (opts, cb) =>
+    if @connected?
+      request arguments...
+    else if @reconnecting
+      cb new Error "Database is attempting to reconnect - tried #{@reconnecting.backoffNumber_} time(s)"
+    else
+      cb new Error "Database is not connected"
   
   #
   handleError: (error, response) =>
@@ -93,6 +108,7 @@ module.exports = class GraphDatabase
     # attempt to reconnect with exponential backoff
     else if error?.code == "ECONNREFUSED"
       @connected = false
+      @statusHandler error
       if not @reconnecting?
         @reconnect()
     
