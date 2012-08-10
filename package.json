@@ -3,7 +3,7 @@
   "description"   : "Neo4j graph database REST API wrappers",
   "author"        : "Jesse Tane <jesse.tane@gmail.com>",
   "main"          : "index.js",
-  "version"       : "0.1.0",
+  "version"       : "0.1.1",
   "dependencies"  : {
     "coffee-script" : "*",
     "request" : "*",
