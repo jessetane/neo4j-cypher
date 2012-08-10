@@ -4,7 +4,6 @@
 
 
 async = require "async"
-request = require "request"
 util = require "./util"
 BaseNode = require "./BaseNode"
 
@@ -18,11 +17,12 @@ module.exports = class Node extends BaseNode
     key = key or @constructor.indexKey
     opts = 
       url: "#{@db.services.node_index}/#{index}?unique"
+      method: "POST"
       json:
         key: key
         value: value
         properties: @serialize()
-    request.post opts, (err, resp, data) =>
+    @db.request opts, (err, resp, data) =>
       if resp.statusCode is 200
         err = new Error "Node exists"
       else
