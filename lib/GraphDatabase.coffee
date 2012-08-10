@@ -92,7 +92,7 @@ module.exports = class GraphDatabase
       error = new Error
       if response.body?
         body = response.body
-        if _.isString body
+        if typeof body == "string"
           try
             body = JSON.parse body
           catch e
