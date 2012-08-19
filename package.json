@@ -9,5 +9,9 @@
     "request" : "2.10.0",
     "backoff": "0.2.0",
     "async": "0.1.22"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jessetane/neo4j.git"
   }
 }
