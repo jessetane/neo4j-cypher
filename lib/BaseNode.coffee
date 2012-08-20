@@ -39,7 +39,7 @@ module.exports = class BaseNode
       SET n={params}
       RETURN n
       """
-      @db.cypherRaw { params: @serialize() }, (err, paths) =>
+      @db.cypherRaw q, { params: @serialize() }, (err, paths) =>
         if not err
           @deserialize paths[0][0].data
         cb err
