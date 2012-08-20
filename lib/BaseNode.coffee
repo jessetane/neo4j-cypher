@@ -10,13 +10,14 @@ GraphDatabase = require "./GraphDatabase"
 module.exports = class BaseNode
 
   # getter
-  @::__defineGetter__ "nodetype", -> if @ instanceof require "./Node" then require "./Node" else require "./Relationship"
+  @::__defineGetter__ "basetype", -> if @ instanceof require "./Node" then require "./Node" else require "./Relationship"
+  @::__defineGetter__ "basename", -> if @ instanceof require "./Node" then "node" else "relationship"
   @::__defineGetter__ "self", -> @data?.self
   @::__defineGetter__ "id", -> (util.id @self) or @properties.id
 
   #
   constructor: (data) ->
-    @nodetype.types[@constructor.name] ?= @constructor
+    @basetype.types[@constructor.name] ?= @constructor
     @db = GraphDatabase.databases.default
     @deserialize data
 
@@ -34,7 +35,7 @@ module.exports = class BaseNode
     if not @self?
       cb new Error type + " must exist in order to index"
     else
-      type = @nodetype + "_index"
+      type = @basename + "_index"
       opts =
         url: "#{@db.services[type]}/#{index}"
         method: "POST"
@@ -47,7 +48,7 @@ module.exports = class BaseNode
 
   #
   deindex: (index, key, cb) =>
-    type = @nodetype + "_index"
+    type = @basename + "_index"
     opts = 
       url: "#{@db.services[type]}/#{index}/#{key}/#{@id}"
       method: "DELETE"
@@ -75,10 +76,10 @@ module.exports = class BaseNode
     if @self
       url = @self + "/properties"
       method = "PUT"
-    else if @nodetype == "relationship"
+    else if @basename is "relationship"
       cb new Error "Relationships cannot be created directly"
     else
-      url = "#{@db.services[@nodetype]}"
+      url = "#{@db.services[@basename]}"
       method = "POST"
     opts = 
       url: url
@@ -91,7 +92,7 @@ module.exports = class BaseNode
 
   #
   delete: (cb) =>
-    if @nodetype == "node"
+    if @basename == "node"
       q="""
       START n=node(#{@id})
       MATCH n-[r?]-()
