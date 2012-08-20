@@ -1,6 +1,6 @@
 {
-  "name"          : "neo4j",
-  "description"   : "Neo4j graph database REST API wrappers",
+  "name"          : "neo4j-cypher",
+  "description"   : "A Neo4j driver for making Cypher queries over HTTP",
   "author"        : "Jesse Tane <jesse.tane@gmail.com>",
   "main"          : "index.js",
   "version"       : "0.1.2",

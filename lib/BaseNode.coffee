@@ -10,12 +10,13 @@ GraphDatabase = require "./GraphDatabase"
 module.exports = class BaseNode
   
   # getter
-  @::__defineGetter__ "nodetype", -> if @ instanceof require "./Node" then "node" else "relationship"
+  @::__defineGetter__ "nodetype", -> if @ instanceof require "./Node" then require "./Node" else require "./Relationship"
   @::__defineGetter__ "self", -> @data?.self
   @::__defineGetter__ "id", -> (util.id @self) or @properties.id
   
   #
   constructor: (data) ->
+    @nodetype.types[@constructor.name] ?= @constructor
     @db = GraphDatabase.databases.default
     @deserialize data
   
@@ -28,24 +29,20 @@ module.exports = class BaseNode
   serialize: =>
     @properties
   
-  #
+  # NOTE: This may be unsafe as it looks nodes up by ID (Neo4j recycles ID's)
   save: (cb) =>
-    if @self
-      url = @self + "/properties"
-      method = "PUT"
-    else if @nodetype == "relationship"
-      cb new Error "Relationships cannot be created directly"
+    if not @self?
+      cb new Error type + " must exist in order to index"
     else
-      url = "#{@db.services[@nodetype]}"
-      method = "POST"
-    opts = 
-      url: url
-      method: method
-      json: @serialize()
-    @db.request opts, (err, resp, data) =>
-      if not err = @db.handleError err, resp
-        @deserialize data
-      cb err
+      q = """
+      START n=node(#{@id})
+      SET n={params}
+      RETURN n
+      """
+      @db.cypherRaw { params: @serialize() }, (err, paths) =>
+        if not err
+          @deserialize paths[0][0].data
+        cb err
   
   #
   index: (index, key, value, cb) =>

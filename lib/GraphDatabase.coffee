@@ -82,9 +82,9 @@ module.exports = class GraphDatabase
     if @connected?
       request arguments...
     else if @reconnecting
-      cb new Error "Database is attempting to reconnect - tried #{@reconnecting.backoffNumber_} time(s)"
+      cb new Error "Attempting to reconnect to #{@url} - tried #{@reconnecting.backoffNumber_} time(s)"
     else
-      cb new Error "Database is not connected"
+      cb new Error "Not connected"
   
   #
   handleError: (error, response) =>
@@ -102,7 +102,7 @@ module.exports = class GraphDatabase
         else if body.exception?
           error.message = body.exception
       else
-        error.message = "Unknown neo4j error"
+        error.message = "Unknown neo4j error with status: #{response.statusCode}"
      
     # ECONNREFUSED means the db could not be contacted
     # attempt to reconnect with exponential backoff
