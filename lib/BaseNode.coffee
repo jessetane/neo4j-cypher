@@ -8,42 +8,27 @@ GraphDatabase = require "./GraphDatabase"
 
 
 module.exports = class BaseNode
-  
+
   # getter
   @::__defineGetter__ "nodetype", -> if @ instanceof require "./Node" then require "./Node" else require "./Relationship"
   @::__defineGetter__ "self", -> @data?.self
   @::__defineGetter__ "id", -> (util.id @self) or @properties.id
-  
+
   #
   constructor: (data) ->
     @nodetype.types[@constructor.name] ?= @constructor
     @db = GraphDatabase.databases.default
     @deserialize data
-  
+
   #
   deserialize: (data) =>
     @data = data or @data or {}
     @properties = util.extend @properties or {}, data?.data or data
-  
+
   #
   serialize: =>
     @properties
-  
-  # NOTE: This may be unsafe as it looks nodes up by ID (Neo4j recycles ID's)
-  save: (cb) =>
-    if not @self?
-      cb new Error type + " must exist in order to index"
-    else
-      q = """
-      START n=node(#{@id})
-      SET n={params}
-      RETURN n
-      """
-      @db.cypherRaw q, { params: @serialize() }, (err, paths) =>
-        if not err
-          @deserialize paths[0][0].data
-        cb err
-  
+
   #
   index: (index, key, value, cb) =>
     if not @self?
@@ -59,7 +44,7 @@ module.exports = class BaseNode
           value: value
       @db.request opts, (err, resp) =>
         cb @db.handleError err, resp
-  
+
   #
   deindex: (index, key, cb) =>
     type = @nodetype + "_index"
@@ -68,7 +53,42 @@ module.exports = class BaseNode
       method: "DELETE"
     @db.request opts, (err, resp) =>
       cb @db.handleError err, resp
-  
+
+  # M07 doesn't seem to be ready for this yet!
+  #
+  # save: (cb) =>
+  #   if not @self?
+  #     cb new Error type + " must exist in order to index"
+  #   else
+  #     q = """
+  #     START n=node(#{@id})
+  #     SET n={map}
+  #     RETURN n
+  #     """
+  #     @db.cypherRaw q, { map: @serialize() }, (err, paths) =>
+  #       if not err
+  #         @deserialize paths[0][0].data
+  #       cb err
+
+  #
+  save: (cb) =>
+    if @self
+      url = @self + "/properties"
+      method = "PUT"
+    else if @nodetype == "relationship"
+      cb new Error "Relationships cannot be created directly"
+    else
+      url = "#{@db.services[@nodetype]}"
+      method = "POST"
+    opts = 
+      url: url
+      method: method
+      json: @serialize()
+    @db.request opts, (err, resp, data) =>
+      if not err = @db.handleError err, resp
+        @deserialize data
+      cb err
+
   #
   delete: (cb) =>
     if @nodetype == "node"
